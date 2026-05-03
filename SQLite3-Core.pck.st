@@ -22,14 +22,14 @@ ExternalLibrary subclass: #SqliteLibrary
 SqliteLibrary class
 	instanceVariableNames: 'default'!
 
-!classDefinition: #SqliteBlobHelper category: #'SQLite3-Core-Support'!
-ExternalLibrary subclass: #SqliteBlobHelper
+!classDefinition: #LibcLibrary category: #'SQLite3-Core-Support'!
+ExternalLibrary subclass: #LibcLibrary
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'SQLite3-Core-Support'!
-!classDefinition: 'SqliteBlobHelper class' category: #'SQLite3-Core-Support'!
-SqliteBlobHelper class
+!classDefinition: 'LibcLibrary class' category: #'SQLite3-Core-Support'!
+LibcLibrary class
 	instanceVariableNames: 'default'!
 
 !classDefinition: #SqliteError category: #'SQLite3-Core-Support'!
@@ -352,7 +352,7 @@ execute: query args: args on: sqliteRef do: aBlock
 					ptr := self apiColumnBlob: hStmt with: colIdx.
 					len := self apiColumnBytes: hStmt with: colIdx.
 					buf := ByteArray new: len.
-					len > 0 ifTrue: [SqliteBlobHelper default apiCopyBlob: ptr to: buf len: len].
+					len > 0 ifTrue: [LibcLibrary default memcpy: buf from: ptr len: len].
 					value := buf].
 				[5] -> [value := nil].
 			}.
@@ -402,19 +402,19 @@ moduleName
 	"Was: ^ 'sqlite'"
 	^ 'sqlite3'! !
 
-!SqliteBlobHelper methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
-apiCopyBlob: src to: dest len: len
-	"Copy blob bytes from sqlite pointer to Smalltalk ByteArray"
-	<cdecl: void 'sqlite3_copy_blob' (ulong void* ulong)>
+!LibcLibrary methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
+memcpy: dest from: src len: len
+	"void* memcpy(void* dest, const void* src, size_t n)"
+	<cdecl: void* 'memcpy' (void* ulonglong long)>
 	^self externalCallFailed! !
 
-!SqliteBlobHelper class methodsFor: 'accessing' stamp: 'gw 5/3/2026 12:00'!
+!LibcLibrary class methodsFor: 'accessing' stamp: 'gw 5/3/2026 12:00'!
 default
 	^ default ifNil: [default := super new]! !
 
-!SqliteBlobHelper class methodsFor: 'accessing' stamp: 'gw 5/3/2026 12:00'!
+!LibcLibrary class methodsFor: 'accessing' stamp: 'gw 5/3/2026 12:00'!
 moduleName
-	^ '/home/greg/w/Cuis-SQLite/scripts/sqlite_blob_helper.so'! !
+	^ 'libc.so.6'! !
 
 !SqliteError methodsFor: 'accessing' stamp: 'pb 1/17/2016 02:52'!
 value
