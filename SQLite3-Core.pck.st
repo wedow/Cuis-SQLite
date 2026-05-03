@@ -246,7 +246,9 @@ bindArg: arg at: index in: stmt
 
 	arg isInteger ifTrue:[^self apiBindInt: stmt with: index with: arg].
 	arg isFloat ifTrue:[^self apiBindDouble: stmt with: index with: arg].
-	arg isString ifTrue:[^self apiBindText: stmt with: index with: arg with: arg size with: -1].
+	arg isString ifTrue:[| bytes |
+		bytes := arg asUtf8BytesOrByteStringOrByteArray.
+		^self apiBindText: stmt with: index with: bytes with: bytes size with: -1].
 	(arg isKindOf: DateAndTime) ifTrue:[ | string |
 		string := String streamContents:[:s|
 			arg printYMDOn: s.
@@ -288,9 +290,10 @@ close: anSqliteRef
 execute: query args: args on: sqliteRef do: aBlock
 	"Execute the given query, binding the arguments as needed"
 
-	| ppStmt hStmt code colCount result value err names rval |
+	| ppStmt hStmt code colCount result value err names rval queryBytes |
 	ppStmt := ByteArray new: Smalltalk wordSize.
-	(err := self apiPrepareV2: sqliteRef with: query with: query size with: ppStmt with: nil) == 0
+	queryBytes := query asUtf8BytesOrByteStringOrByteArray.
+	(err := self apiPrepareV2: sqliteRef with: queryBytes with: queryBytes size with: ppStmt with: nil) == 0
 		ifFalse:[self error: 'sqlite_prepare_v2 failed: ', err printString].
 	hStmt := ppStmt integerAt: 1.
 	(self apiBindParameterCount: hStmt) = args size 
@@ -314,7 +317,7 @@ execute: query args: args on: sqliteRef do: aBlock
 			(self apiColumnType: hStmt with: colIdx) caseOf: {
 				[1] -> [value := self apiColumnInt: hStmt with: colIdx].
 				[2] -> [value := self apiColumnDouble: hStmt with: colIdx].
-				[3] -> [value := self apiColumnText: hStmt with: colIdx].
+				[3] -> [value := UnicodeString fromUtf8Bytes: (self apiColumnText: hStmt with: colIdx) asByteArray].
 				[4] -> [self error: 'Blobs are not supported'].
 				[5] -> [value := nil].
 			}.

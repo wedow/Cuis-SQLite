@@ -59,6 +59,19 @@ testLargeIntegerRoundTrip
 	].
 	self assert: result = largeInt! !
 
+!SQLiteConnectionTest methodsFor: 'testing' stamp: 'gw 5/3/2026 12:00'!
+testUnicodeStringRoundTrip
+	"UnicodeString with multi-byte UTF-8 characters should survive a round-trip through SQLite"
+	| u result |
+	u := UnicodeString fromUtf8Bytes: (ByteArray with: 99 with: 97 with: 102 with: 195 with: 169). "café"
+	db execute: 'CREATE TABLE unicode_test (id INTEGER PRIMARY KEY, name TEXT)' args: {}.
+	db execute: 'INSERT INTO unicode_test (name) VALUES (?)' args: {u}.
+	result := nil.
+	db execute: 'SELECT name FROM unicode_test' args: {} do: [:name |
+		result := name.
+	].
+	self assert: result = u! !
+
 !SQLiteConnectionTest methodsFor: 'testing' stamp: 'tbn 1/25/2010 20:28'!
 testInstanceCreation
  
