@@ -1,0 +1,10 @@
+[cuis]
+vm = "/home/greg/.cuis/versions/master/CuisVM.app/Contents/Linux-x86_64/squeak"
+base_image = "/home/greg/.cuis/versions/master/CuisImage/Cuis7.7-7777.image"
+bridge_package = "packages/CuisAgentBridge.pck.st"
+
+[packages]
+autoload = ["packages/FFI.pck.st", "packages/FFICompatibility.pck.st", "SQLite3-Core.pck.st", "SQLite3-Tests.pck.st"]
+
+[session]
+default = "dev"

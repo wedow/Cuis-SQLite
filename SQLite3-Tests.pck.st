@@ -1,4 +1,4 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2652] on 10 January 2016 at 4:28:53.545249 pm'!
+'From Cuis7.7 [latest update: #7779] on 3 May 2026 at 12:00:00 pm'!
 'Description '!
 !provides: 'SQLite3-Tests' 1 1!
 !requires: 'SQLite3-Core' 1 1 nil!
@@ -52,7 +52,7 @@ testInstanceCreation
 	self 
 		assert: db notNil;
 		assert: db class = self defaultTestClass;
-		deny: (self defaultTestClass registry includes: db).
+		deny: (self defaultTestClass registry keys includes: db).
 	
 ! !
 
@@ -84,11 +84,11 @@ testRegistration
 
 	db open.
 	
-	self assert: (self defaultTestClass registry includes: db).	
+	self assert: (self defaultTestClass registry keys includes: db).	
 	
 	db close.
 	
-	self deny: (self defaultTestClass registry includes: db).	! !
+	self deny: (self defaultTestClass registry keys includes: db).	! !
 
 !SQLiteConnectionTest methodsFor: 'testing' stamp: 'tbn 1/25/2010 20:54'!
 testTableCreation

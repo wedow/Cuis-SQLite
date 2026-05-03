@@ -1,6 +1,7 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2658] on 17 January 2016 at 3:02:54.012716 am'!
+'From Cuis7.7 [latest update: #7779] on 3 May 2026 at 12:00:00 pm'!
 'Description '!
 !provides: 'SQLite3-Core' 1 2!
+!requires: 'FFI' 1 0 nil!
 !classDefinition: #SQLiteRecord category: #'SQLite3-Core-Public'!
 Dictionary subclass: #SQLiteRecord
 	instanceVariableNames: ''
@@ -248,7 +249,7 @@ bindArg: arg at: index in: stmt
 	arg isString ifTrue:[^self apiBindText: stmt with: index with: arg with: arg size with: -1].
 	(arg isKindOf: DateAndTime) ifTrue:[ | string |
 		string := String streamContents:[:s|
-			arg printYMDOn: s withLeadingSpace: false.
+			arg printYMDOn: s.
 			s nextPut: $T.
 			arg printHMSOn: s.
 		].
@@ -288,10 +289,10 @@ execute: query args: args on: sqliteRef do: aBlock
 	"Execute the given query, binding the arguments as needed"
 
 	| ppStmt hStmt code colCount result value err names rval |
-	ppStmt := WordArray new: 1.
+	ppStmt := ByteArray new: Smalltalk wordSize.
 	(err := self apiPrepareV2: sqliteRef with: query with: query size with: ppStmt with: nil) == 0
 		ifFalse:[self error: 'sqlite_prepare_v2 failed: ', err printString].
-	hStmt := ppStmt at: 1.
+	hStmt := ppStmt integerAt: 1.
 	(self apiBindParameterCount: hStmt) = args size 
 		ifFalse:[self error:'Argument count mismatch'].
 	1 to: args size do:[:idx|
@@ -346,13 +347,13 @@ open: aString
 !SqliteLibrary methodsFor: 'accessing' stamp: 'tbn 1/25/2010 19:52'!
 resultForQuery: aString on: sqliteRef
 	|nrows ncols buffer err|
-	nrows := WordArray new: 1.
-	ncols := WordArray new: 1.
+	nrows := ByteArray new: Smalltalk wordSize.
+	ncols := ByteArray new: Smalltalk wordSize.
 	err := SqliteError new.
 	buffer := SqliteResultBuffer new.
 	self apiGetTable: sqliteRef sql: aString buffer: buffer rows: nrows columns: ncols error: err.
 	self checkError: err.
-	^ SqliteResult buffer: buffer rows: nrows first columns: ncols first! !
+	^ SqliteResult buffer: buffer rows: (nrows integerAt: 1) columns: (ncols integerAt: 1)! !
 
 !SqliteLibrary class methodsFor: 'accessing' stamp: 'tbn 1/25/2010 19:53'!
 default
@@ -380,7 +381,7 @@ fields
 
 !SqliteError class methodsFor: 'class initialization' stamp: 'ab 12/15/2002 22:17'!
 initialize
-	self defineFields! !
+	self compileFields! !
 
 !SqliteReference methodsFor: 'accessing' stamp: 'pb 1/17/2016 02:52'!
 value
@@ -400,7 +401,7 @@ fields
 !SqliteReference class methodsFor: 'class initialization' stamp: 'cf 11/22/2005 21:58'!
 initialize
 	"SqliteReference initialize"
-	self defineFields! !
+	self compileFields! !
 
 !SqliteResultBuffer methodsFor: 'accessing' stamp: 'pb 1/17/2016 02:52'!
 value
@@ -419,7 +420,7 @@ fields
 
 !SqliteResultBuffer class methodsFor: 'class initialization' stamp: 'ab 1/14/2003 15:28'!
 initialize
-	self defineFields! !
+	self compileFields! !
 
 !SQLiteConnection methodsFor: 'finalization' stamp: 'tbn 1/25/2010 19:58'!
 actAsExecutor
@@ -551,7 +552,7 @@ initialize
 
 !SQLiteConnection class methodsFor: 'accessing' stamp: 'tbn 1/25/2010 19:58'!
 registry
-	^ registry ifNil: [registry := WeakRegistry new]! !
+	^ registry ifNil: [registry := FinalizationRegistry new]! !
 
 !SQLiteConnection class methodsFor: 'private' stamp: 'pb 1/17/2016 03:01'!
 startUp: whatever
@@ -575,9 +576,9 @@ columnNames
 currentAddress
 	|bytes base current|
 	bytes := buffer value getHandle asByteArrayPointer.
-	base := bytes unsignedLongAt: 1.
-	current := base + (index - 1 * 4).
-	bytes unsignedLongAt: 1 put: current.
+	base := bytes integerAt: 1.
+	current := base + (index - 1 * Smalltalk wordSize).
+	bytes integerAt: 1 put: current.
 	^ bytes asExternalPointer 	! !
 
 !SqliteResult methodsFor: 'public' stamp: 'ab 12/16/2002 01:56'!
@@ -634,7 +635,7 @@ readStringAtAddress: anAddress
 	^ String streamContents:
 		[:stream |
 		i := 1.
-		[(char := deref unsignedCharAt: i) asciiValue = 0] 
+		[(char := deref unsignedCharAt: i) codePoint = 0]
 			whileFalse:
 				[stream nextPut: char.
 				 i := i + 1]]! !
