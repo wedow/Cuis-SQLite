@@ -46,6 +46,19 @@ tearDown
 	self databaseName asFileEntry delete.
 	super tearDown! !
 
+!SQLiteConnectionTest methodsFor: 'testing' stamp: 'gw 5/3/2026 12:00'!
+testLargeIntegerRoundTrip
+	"Large integers (> 32-bit) should survive a round-trip through SQLite"
+	| largeInt result |
+	largeInt := 2 raisedToInteger: 53. "9007199254740992 - safe 64-bit integer"
+	db execute: 'CREATE TABLE bigints (id INTEGER PRIMARY KEY, val INTEGER)' args: {}.
+	db execute: 'INSERT INTO bigints (val) VALUES (?)' args: {largeInt}.
+	result := nil.
+	db execute: 'SELECT val FROM bigints' args: {} do: [:val |
+		result := val.
+	].
+	self assert: result = largeInt! !
+
 !SQLiteConnectionTest methodsFor: 'testing' stamp: 'tbn 1/25/2010 20:28'!
 testInstanceCreation
  

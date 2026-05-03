@@ -98,10 +98,10 @@ apiBindDouble: stmt with: index with: double
 	<cdecl: long 'sqlite3_bind_double' (ulong long double)>
 	^self externalCallFailed! !
 
-!SqliteLibrary methodsFor: 'api' stamp: 'ar 12/8/2011 13:33'!
+!SqliteLibrary methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
 apiBindInt: stmt with: index with: value
-	"int sqlite3_bind_int(sqlite3_stmt*, int, int);"
-	<cdecl: long 'sqlite3_bind_int' (ulong long long)>
+	"int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64);"
+	<cdecl: long 'sqlite3_bind_int64' (ulong long longlong)>
 	^self externalCallFailed! !
 
 !SqliteLibrary methodsFor: 'api' stamp: 'ar 12/8/2011 13:33'!
@@ -146,10 +146,10 @@ apiColumnDouble: hStmt with: iCol
 	<cdecl: double 'sqlite3_column_double' (ulong long)>
 	^self externalCallFailed! !
 
-!SqliteLibrary methodsFor: 'api' stamp: 'ar 12/8/2011 13:52'!
+!SqliteLibrary methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
 apiColumnInt: hStmt with: iCol
-	"int sqlite3_column_int(sqlite3_stmt*, int iCol);"
-	<cdecl: long 'sqlite3_column_int' (ulong long)>
+	"sqlite3_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);"
+	<cdecl: longlong 'sqlite3_column_int64' (ulong long)>
 	^self externalCallFailed! !
 
 !SqliteLibrary methodsFor: 'api' stamp: 'ar 12/9/2011 19:11'!
