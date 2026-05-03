@@ -139,3 +139,43 @@ testUseDatabase
 	self assert: arrayOfDicts size = 2.
 	self assert: (arrayOfDicts first at: 'name') = 'Adam'
 	! !
+
+!SQLiteConnectionTest methodsFor: 'testing' stamp: 'gw 5/3/2026 12:00'!
+testBlobRoundTrip
+	"ByteArray should survive a round-trip through a BLOB column"
+	| blob result |
+	blob := #[1 2 3 4 5].
+	db execute: 'CREATE TABLE blob_test (id INTEGER PRIMARY KEY, data BLOB)' args: {}.
+	db execute: 'INSERT INTO blob_test (data) VALUES (?)' args: {blob}.
+	result := nil.
+	db execute: 'SELECT data FROM blob_test' args: {} do: [:data |
+		result := data.
+	].
+	self assert: (result isKindOf: ByteArray).
+	self assert: result = blob! !
+
+!SQLiteConnectionTest methodsFor: 'testing' stamp: 'gw 5/3/2026 12:00'!
+testEmptyBlobRoundTrip
+	"Empty ByteArray should round-trip through a BLOB column"
+	| blob result |
+	blob := ByteArray new: 0.
+	db execute: 'CREATE TABLE empty_blob_test (id INTEGER PRIMARY KEY, data BLOB)' args: {}.
+	db execute: 'INSERT INTO empty_blob_test (data) VALUES (?)' args: {blob}.
+	result := nil.
+	db execute: 'SELECT data FROM empty_blob_test' args: {} do: [:data |
+		result := data.
+	].
+	self assert: (result isKindOf: ByteArray).
+	self assert: result size = 0! !
+
+!SQLiteConnectionTest methodsFor: 'testing' stamp: 'gw 5/3/2026 12:00'!
+testNullBlobReadsAsNil
+	"NULL in a BLOB column should read back as nil"
+	| result |
+	db execute: 'CREATE TABLE null_blob_test (id INTEGER PRIMARY KEY, data BLOB)' args: {}.
+	db execute: 'INSERT INTO null_blob_test (data) VALUES (?)' args: {nil}.
+	result := 'notNil'.
+	db execute: 'SELECT data FROM null_blob_test' args: {} do: [:data |
+		result := data.
+	].
+	self assert: result isNil! !

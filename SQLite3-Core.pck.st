@@ -22,6 +22,16 @@ ExternalLibrary subclass: #SqliteLibrary
 SqliteLibrary class
 	instanceVariableNames: 'default'!
 
+!classDefinition: #SqliteBlobHelper category: #'SQLite3-Core-Support'!
+ExternalLibrary subclass: #SqliteBlobHelper
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'SQLite3-Core-Support'!
+!classDefinition: 'SqliteBlobHelper class' category: #'SQLite3-Core-Support'!
+SqliteBlobHelper class
+	instanceVariableNames: 'default'!
+
 !classDefinition: #SqliteError category: #'SQLite3-Core-Support'!
 ExternalStructure subclass: #SqliteError
 	instanceVariableNames: ''
@@ -122,6 +132,12 @@ apiBindText: stmt with: index with: value with: length with: destructor
 	<cdecl: long 'sqlite3_bind_text' (ulong long char* long long)>
 	^self externalCallFailed! !
 
+!SqliteLibrary methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
+apiBindBlob: stmt with: index with: value with: length with: destructor
+	"int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));"
+	<cdecl: long 'sqlite3_bind_blob' (ulong long char* long long)>
+	^self externalCallFailed! !
+
 !SqliteLibrary methodsFor: 'api' stamp: 'cf 11/23/2005 15:31'!
 apiChanges: sqlite
 	"int sqlite_changes(sqlite*)"
@@ -162,6 +178,18 @@ apiColumnName: hStmt with: iCol
 apiColumnText: hStmt with: iCol
 	"char* sqlite3_column_int(sqlite3_stmt*, int iCol);"
 	<cdecl: char* 'sqlite3_column_text' (ulong long)>
+	^self externalCallFailed! !
+
+!SqliteLibrary methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
+apiColumnBlob: hStmt with: iCol
+	"const void* sqlite3_column_blob(sqlite3_stmt*, int iCol);"
+	<cdecl: ulonglong 'sqlite3_column_blob' (ulong long)>
+	^self externalCallFailed! !
+
+!SqliteLibrary methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
+apiColumnBytes: hStmt with: iCol
+	"int sqlite3_column_bytes(sqlite3_stmt*, int iCol);"
+	<cdecl: long 'sqlite3_column_bytes' (ulong long)>
 	^self externalCallFailed! !
 
 !SqliteLibrary methodsFor: 'api' stamp: 'ar 12/8/2011 15:00'!
@@ -249,6 +277,8 @@ bindArg: arg at: index in: stmt
 	arg isString ifTrue:[| bytes |
 		bytes := arg asUtf8BytesOrByteStringOrByteArray.
 		^self apiBindText: stmt with: index with: bytes with: bytes size with: -1].
+	(arg isKindOf: ByteArray) ifTrue:[
+		^self apiBindBlob: stmt with: index with: arg with: arg size with: -1].
 	(arg isKindOf: DateAndTime) ifTrue:[ | string |
 		string := String streamContents:[:s|
 			arg printYMDOn: s.
@@ -318,7 +348,12 @@ execute: query args: args on: sqliteRef do: aBlock
 				[1] -> [value := self apiColumnInt: hStmt with: colIdx].
 				[2] -> [value := self apiColumnDouble: hStmt with: colIdx].
 				[3] -> [value := UnicodeString fromUtf8Bytes: (self apiColumnText: hStmt with: colIdx) asByteArray].
-				[4] -> [self error: 'Blobs are not supported'].
+				[4] -> [| ptr len buf |
+					ptr := self apiColumnBlob: hStmt with: colIdx.
+					len := self apiColumnBytes: hStmt with: colIdx.
+					buf := ByteArray new: len.
+					len > 0 ifTrue: [SqliteBlobHelper default apiCopyBlob: ptr to: buf len: len].
+					value := buf].
 				[5] -> [value := nil].
 			}.
 			result at: i put: value.
@@ -366,6 +401,20 @@ default
 moduleName
 	"Was: ^ 'sqlite'"
 	^ 'sqlite3'! !
+
+!SqliteBlobHelper methodsFor: 'api' stamp: 'gw 5/3/2026 12:00'!
+apiCopyBlob: src to: dest len: len
+	"Copy blob bytes from sqlite pointer to Smalltalk ByteArray"
+	<cdecl: void 'sqlite3_copy_blob' (ulong void* ulong)>
+	^self externalCallFailed! !
+
+!SqliteBlobHelper class methodsFor: 'accessing' stamp: 'gw 5/3/2026 12:00'!
+default
+	^ default ifNil: [default := super new]! !
+
+!SqliteBlobHelper class methodsFor: 'accessing' stamp: 'gw 5/3/2026 12:00'!
+moduleName
+	^ '/home/greg/w/Cuis-SQLite/scripts/sqlite_blob_helper.so'! !
 
 !SqliteError methodsFor: 'accessing' stamp: 'pb 1/17/2016 02:52'!
 value
